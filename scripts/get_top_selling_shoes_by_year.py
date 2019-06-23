@@ -27,53 +27,31 @@ def flatten(items):
     return flattened_items
 
 def get_html_data(response):
-    # TODO: Add results from HTML
+
     html = BeautifulSoup(response.text, "html5lib")
     browse_grid = html.find("div", class_="browse-grid")
 
-# <div class="tile browse-tile">
-#     <div class="tile Tile-sc-18f3mrw-0 iCgYKH">
-#         <a href="/adidas-yeezy-boost-350-v2-cream-white" style="color:black">
-#             <div class="TileImage-wau2e8-0 cqDtuD" style="position:relative;padding-top:58%">
-#                 <noscript>
-#                     <img alt="adidas Yeezy Boost 350 V2 Cream/Triple White" class="LazyImage__StyledImage-sc-153p075-0 MEhRc" src="https://stockx.imgix.net/Adidas-Yeezy-Boost-350-V2-Cream-White-1-1.jpg?fit=fill&amp;bg=FFFFFF&amp;w=300&amp;h=214&amp;auto=format,compress&amp;trim=color&amp;q=90&amp;dpr=2&amp;updated_at=1539789713"/>
-#                 </noscript>
-#             </div>
-#             <div class="TileBody-sc-1rlrno1-0 fjqeUQ">
-#                 <div class="PrimaryText-sc-12c6bzb-0 gMymmc" size="16" style="height:38px;overflow:hidden;margin-bottom:6px">
-#                     adidas Yeezy Boost 350 V2 Cream/Triple White
-#                 </div>
-#                 <div>
-#                     <div class="price-line-div">
-#                         <div class="SecondaryText-sc-1mx0yoa-0 fygSsx">lowest ask</div>
-#                         <div class="PrimaryText-sc-12c6bzb-0 jwzdVc" size="22">£210</div>
-#                     </div>
-#                 </div>
-#                 <div class="change SecondaryText-sc-1mx0yoa-0 fygSsx">
-#                     # Sold: 43878
-#                 </div>
-#             </div>
-#         </a>
-#     </div>
-# </div>
-
+    html_data = []
     try:
         for div in browse_grid.find_all("div", class_="browse-tile"):
-            # TODO:
-            # For each tile find,
-            # * href
-            # * name
-            # * lowest ask price
-            # * total sold
-            print(div)
-            print("----------")
+            tile = {}
+            tile["link"] = div.find("a", href=True)["href"]
+            tile["image"] = div.find("img")["src"]
+            tile["name"] = div.find("div", attrs={"class": "PrimaryText-sc-12c6bzb-0"}).text
+            tile["lowest_ask"] = div.find_all("div", attrs={"class": "jwzdVc"})[0].text
+            tile["total_sold"] = div.find_all("div", attrs={"class": "SecondaryText-sc-1mx0yoa-0"})[-1].text
+            html_data.append(tile)
     except:
         pass
+    
+    html_df = pd.DataFrame(html_data)
+
+    return html_df
 
 def get_script_data(response):
 
     lxml = BeautifulSoup(response.text, "lxml")
-    scripts = lxml.find_all('script')
+    scripts = lxml.find_all("script")
 
     data = scripts[13].string
     stock = json.loads(data)
@@ -83,27 +61,29 @@ def get_script_data(response):
     
     flattened_items = flatten(items)
     items_df = pd.DataFrame(flattened_items)
-    print(items_df.head())
+
     return items_df
 
 def get_data(url):
 
-    headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}
+    headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"}
     response = requests.get(url, headers=headers)
 
     if response.status_code == 200:
 
         html_data = get_html_data(response)
-        
-        # script_data = get_script_data(response)
-    
-    # TODO: return merged data frames
-    # return ...
+        script_data = get_script_data(response)
+
+    # TODO: handle errors
+    data_df = html_data.merge(script_data, on="name")
+    data_df.to_csv("data_df.csv", index=False)
+
+    return data_df
 
 if __name__ == "__main__":
 
     parser=argparse.ArgumentParser()
-    parser.add_argument('--year')
+    parser.add_argument("--year")
 
     args = parser.parse_args()
     year = args.year

@@ -75,6 +75,18 @@ def get_data(url, year):
         html_data = get_html_data(response)
         script_data = get_script_data(response)
         top_selling_shoes = html_data.merge(script_data, on="image")
+
+        # Rename columns
+        top_selling_shoes.rename(columns={"itemCondition": "item_condition", "name_y": "name", "offers_priceCurrency": "offers_price_currency", "releaseDate": "release_date"}, inplace=True)
+        # Cleanup df
+        top_selling_shoes["total_sold"] = top_selling_shoes["total_sold"].apply(lambda s: int(s.split(" ")[-1]))
+        top_selling_shoes["link"] = top_selling_shoes["link"].apply(lambda s: "https://stockx.com" + s)
+        top_selling_shoes["lowest_ask"] = top_selling_shoes["lowest_ask"].apply(lambda s: int(s[1:].replace(",", "")))
+        top_selling_shoes["offers_price_currency"] = "GBP"
+        top_selling_shoes.drop(columns=["name_x", "@type", "url", "offers_highPrice", "offers_lowPrice", "offers_@type", "description"], inplace=True)
+        # Change column order
+        top_selling_shoes = top_selling_shoes[["name", "model", "brand", "color", "item_condition", "sku", "image", "link", "offers_url", "release_date", "lowest_ask", "offers_price_currency", "total_sold"]]
+
         filename = "{}_{}.csv".format("top_selling_shoes", year)
         top_selling_shoes.to_csv("./data/{}".format(filename), index=False)
     
@@ -92,5 +104,7 @@ if __name__ == "__main__":
     year = args.year
     search_url = base_url + year
 
+    # TODO: Want to get more shoes for given year
+    # How to run JS on page?
     top_selling_shoes = get_data(search_url, year)
     print(top_selling_shoes.head())

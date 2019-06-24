@@ -36,7 +36,7 @@ def get_html_data(response):
         for div in browse_grid.find_all("div", class_="browse-tile"):
             tile = {}
             tile["link"] = div.find("a", href=True)["href"]
-            tile["image"] = div.find("img")["src"]
+            tile["image"] = div.find("img")["src"].split("?")[0]
             tile["name"] = div.find("div", attrs={"class": "PrimaryText-sc-12c6bzb-0"}).text
             tile["lowest_ask"] = div.find_all("div", attrs={"class": "jwzdVc"})[0].text
             tile["total_sold"] = div.find_all("div", attrs={"class": "SecondaryText-sc-1mx0yoa-0"})[-1].text
@@ -61,10 +61,11 @@ def get_script_data(response):
     
     flattened_items = flatten(items)
     items_df = pd.DataFrame(flattened_items)
+    items_df["image"] = items_df["image"].apply(lambda image: image.split("?")[0])
 
     return items_df
 
-def get_data(url):
+def get_data(url, year):
 
     headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"}
     response = requests.get(url, headers=headers)
@@ -73,12 +74,14 @@ def get_data(url):
 
         html_data = get_html_data(response)
         script_data = get_script_data(response)
+        top_selling_shoes = html_data.merge(script_data, on="image")
+        filename = "{}_{}.csv".format("top_selling_shoes", year)
+        top_selling_shoes.to_csv("./data/{}".format(filename), index=False)
+    
+    else:
+        return
 
-    # TODO: handle errors
-    data_df = html_data.merge(script_data, on="name")
-    data_df.to_csv("data_df.csv", index=False)
-
-    return data_df
+    return top_selling_shoes
 
 if __name__ == "__main__":
 
@@ -89,4 +92,5 @@ if __name__ == "__main__":
     year = args.year
     search_url = base_url + year
 
-    get_data(search_url)
+    top_selling_shoes = get_data(search_url, year)
+    print(top_selling_shoes.head())

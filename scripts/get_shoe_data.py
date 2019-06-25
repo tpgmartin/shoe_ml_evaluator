@@ -17,12 +17,10 @@ def get_product_page_info(url):
         html = BeautifulSoup(response.text, "html5lib")
         product_page_data = {}
 
-        # Information to get
-        # * Last sale
-        # * Lowest ask
-        # * Highest bid
-        # * Name
-        # * Last sale
+        product_page_data["Last Sale"] = html.find("div", class_="sale-value").text
+        product_page_data["Lowest Ask"] = html.find("div", class_="bid").find(class_="stat-small").text
+        product_page_data["Highest Bid"] = html.find("div", class_="ask").find(class_="stat-small").text
+        product_page_data["Name"] = html.find("h1", class_="name").text
 
         product_details = html.find("div", class_="product-details")
         for div in product_details.find_all("div", class_="detail"):
@@ -34,13 +32,17 @@ def get_product_page_info(url):
         product_description = html.find("div", class_="product-description").text
         product_page_data["product_description"] = product_description
 
+        for li in html.find(class_="product-market-summary").find_all("li"):
+            title = li.find("span").text
+            value = li.find(class_="value-container").text
+            product_page_data[title] = value
+
+        for div in html.find_all(class_="gauge-container"):
+            title = div.find(class_="gauge-title").text
+            value = div.find(class_="gauge-value").text
+            product_page_data[title] = value
+
         print(product_page_data)
-        # * 52 week high
-        # * Trade range
-        # * Volatility
-        # * Number of sales
-        # * Price premium
-        # * Average sale price
 
 if __name__ == "__main__":
 
@@ -53,7 +55,10 @@ if __name__ == "__main__":
     filepath = "./data/top_selling_shoes_{}.csv".format(year)
     shoes = pd.read_csv(filepath)
 
-    # all_product_page_data = []
-    # for shoe in shoes:
-        # get_product_page_info(shoe.link)
-    get_product_page_info("https://stockx.com/adidas-yeezy-boost-350-v2-cream-white")
+    all_product_page_data = []
+    for shoe in shoes:
+        get_product_page_info(shoe.link)
+
+    product_page_df = pd.DataFrame(all_product_page_data)
+    filename = "{}_{}.csv".format("product_page_data", year)
+    product_page_df.to_csv("./data/{}".format(filename), index=False)

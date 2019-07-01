@@ -32,7 +32,6 @@ if __name__ == "__main__":
         "hidden",
         "ipoDate",
         "lock_selling",
-        "market",
         "media",
         "minimumBid",
         "productCategory",

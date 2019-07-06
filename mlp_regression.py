@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split
 X_train = load("./lib/X_train.joblib")
 y_train = load("./lib/y_train.joblib")
 X_test = load("./lib/X_test.joblib")
-y_test = load("./lib/X_test.joblib")
+y_test = load("./lib/y_test.joblib")
 
 # Not sure about scaling target variable?
 
@@ -26,7 +26,8 @@ predictions = model.predict(X_test)
 # Find percentage difference between actual and predicted sales
 percentDiff = (predictions.flatten() - y_test / y_test) * 100
 absPercentDiff = np.abs(percentDiff)
- 
+
+# MAPE ~ 20000% !?
 mean = np.mean(absPercentDiff)
 std = np.std(absPercentDiff)
 print("mean: {:.2f}%, std: {:.2f}%".format(mean, std))

@@ -1,3 +1,4 @@
+import cv2
 import glob
 from joblib import dump,load
 from keras.optimizers import Adam
@@ -21,8 +22,28 @@ sorted_files = []
 for key, value in sorted(image_files_dict.items()):
     sorted_files.append(value)
 
+
+images = []
+for filepath in sorted_files:
+    # Errors 
+    # libpng warning: cHRM: inconsistent chromaticities
+    # * /Users/Tom/shoe_ml_evaluator/data/116.png
+    # * /Users/Tom/shoe_ml_evaluator/data/459.png
+    # * /Users/Tom/shoe_ml_evaluator/data/508.png
+    # libpng warning: iCCP: known incorrect sRGB profile
+    # * /Users/Tom/shoe_ml_evaluator/data/45.png
+    # * /Users/Tom/shoe_ml_evaluator/data/51.png
+    # * /Users/Tom/shoe_ml_evaluator/data/78.png
+    # * /Users/Tom/shoe_ml_evaluator/data/91.png
+    image = cv2.imread(filepath)
+    image = cv2.resize(image, (64, 64))
+    images.append(image)
+
+images = np.array(images)
+images = images / 255.0
+
 df = load("./lib/df.joblib")
-df_train, df_test, images_train, images_test = train_test_split(df, sorted_files, test_size=0.3, random_state=42)
+df_train, df_test, images_train, images_test = train_test_split(df, images, test_size=0.3, random_state=42)
 
 # Won't normalise target variable
 # Target variable is "deadstockSold"
@@ -44,6 +65,7 @@ percentDiff = ((preds.flatten() - y_test) / y_test) * 100
 absPercentDiff = np.abs(percentDiff)
 
 # compute the MAPE
+# mean: 55.40%, std: 155.48%
 mean = np.mean(absPercentDiff)
 std = np.std(absPercentDiff)
-print("[INFO] mean: {:.2f}%, std: {:.2f}%".format(mean, std))
+print("mean: {:.2f}%, std: {:.2f}%".format(mean, std))

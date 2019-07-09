@@ -8,10 +8,10 @@ import os
 from sklearn.model_selection import train_test_split
 
 # Get image files
+# Why difference between jpg and png?
 image_files = []
 image_files.extend(glob.glob(os.path.join(os.getcwd(), "data", "*.jpg")))
 image_files.extend(glob.glob(os.path.join(os.getcwd(), "data", "*.jpeg")))
-image_files.extend(glob.glob(os.path.join(os.getcwd(), "data", "*.png")))
 
 image_files_dict = {}
 for f in image_files:
@@ -35,7 +35,7 @@ for filepath in sorted_files:
     # * /Users/Tom/shoe_ml_evaluator/data/51.png
     # * /Users/Tom/shoe_ml_evaluator/data/78.png
     # * /Users/Tom/shoe_ml_evaluator/data/91.png
-    image = cv2.imread(filepath)
+    image = cv2.imread(filepath, cv2.IMREAD_UNCHANGED)
     image = cv2.resize(image, (64, 64))
     images.append(image)
 
@@ -43,10 +43,11 @@ images = np.array(images)
 images = images / 255.0
 
 df = load("./lib/df.joblib")
+# need to think about imbalances in datasets e.g. brand
 df_train, df_test, images_train, images_test = train_test_split(df, images, test_size=0.3, random_state=42)
 
-# Won't normalise target variable
-# Target variable is "deadstockSold"
+# # Won't normalise target variable
+# # Target variable is "deadstockSold"
 y_train = df_train["deadstockSold"]
 y_test = df_test["deadstockSold"]
 
@@ -65,7 +66,7 @@ percentDiff = ((preds.flatten() - y_test) / y_test) * 100
 absPercentDiff = np.abs(percentDiff)
 
 # compute the MAPE
-# mean: 55.40%, std: 155.48%
+# mean: 46.24%, std: 30.16%
 mean = np.mean(absPercentDiff)
 std = np.std(absPercentDiff)
 print("mean: {:.2f}%, std: {:.2f}%".format(mean, std))

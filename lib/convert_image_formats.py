@@ -11,7 +11,7 @@ def convert_image_formats(data_dir, inputfileext, outputfileext):
         im = Image.open(image)
         rgb_im = im.convert("RGB")
         filename = os.path.basename(image).split(".")[0]
-        rgb_im.save(f"{filename}.jpg")
+        rgb_im.save(f"./data/{filename}.jpg")
         os.remove(image)
 
 if __name__ == "__main__":

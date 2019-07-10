@@ -8,7 +8,6 @@ import os
 from sklearn.model_selection import train_test_split
 
 # Get image files
-# Why difference between jpg and png?
 image_files = []
 image_files.extend(glob.glob(os.path.join(os.getcwd(), "data", "*.jpg")))
 image_files.extend(glob.glob(os.path.join(os.getcwd(), "data", "*.jpeg")))
@@ -25,16 +24,6 @@ for key, value in sorted(image_files_dict.items()):
 
 images = []
 for filepath in sorted_files:
-    # Errors 
-    # libpng warning: cHRM: inconsistent chromaticities
-    # * /Users/Tom/shoe_ml_evaluator/data/116.png
-    # * /Users/Tom/shoe_ml_evaluator/data/459.png
-    # * /Users/Tom/shoe_ml_evaluator/data/508.png
-    # libpng warning: iCCP: known incorrect sRGB profile
-    # * /Users/Tom/shoe_ml_evaluator/data/45.png
-    # * /Users/Tom/shoe_ml_evaluator/data/51.png
-    # * /Users/Tom/shoe_ml_evaluator/data/78.png
-    # * /Users/Tom/shoe_ml_evaluator/data/91.png
     image = cv2.imread(filepath, cv2.IMREAD_UNCHANGED)
     image = cv2.resize(image, (64, 64))
     images.append(image)

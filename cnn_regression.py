@@ -35,10 +35,12 @@ df = load("./lib/df.joblib")
 # need to think about imbalances in datasets e.g. brand
 df_train, df_test, images_train, images_test = train_test_split(df, images, test_size=0.3, random_state=42)
 
-# # Won't normalise target variable
-# # Target variable is "deadstockSold"
-y_train = df_train["deadstockSold"]
-y_test = df_test["deadstockSold"]
+# What to predict?
+# * Average price
+# * Total sales
+# * % return
+y_train = df_train["averageDeadstockPrice"]
+y_test = df_test["averageDeadstockPrice"]
 
 model = models.create_cnn(64, 64, 3, regress=True)
 opt = Adam(lr=1e-3, decay=1e-3 / 200)

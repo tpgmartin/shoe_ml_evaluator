@@ -5,7 +5,7 @@ import json
 import pandas as pd
 from pandas.io.json import json_normalize
 
-# JSON downloaded 28.06.19
+# JSON downloaded 11.07.19
 
 if __name__ == "__main__":
 
@@ -18,12 +18,17 @@ if __name__ == "__main__":
 
     df = pd.DataFrame.from_dict(json_files, orient="columns")
     df["imageUrl"] = df["media"].apply(lambda media: media["imageUrl"])
+    df["pricePremium"] = df["market"].apply(lambda market: market["pricePremium"])
+    df["deadstockSold"] = df["market"].apply(lambda market: market["deadstockSold"])
+    df["averageDeadstockPrice"] = df["market"].apply(lambda market: market["averageDeadstockPrice"])
 
     cols_to_drop = [
         "_tags",
+        "belowRetail",
         "breadcrumbs",
         "buying_countries",
         "charityCondition",
+        "condition",
         "childId",
         "countryOfManufacture",
         "dataType",
@@ -32,11 +37,19 @@ if __name__ == "__main__":
         "hidden",
         "ipoDate",
         "lock_selling",
+        "market",
         "media",
         "minimumBid",
+        "objectID",
+        "releaseDate",
+        "releaseTime",
         "productCategory",
         "selling_countries",
+        "shoe",
         "shoeSize",
+        "shortDescription",
+        "styleId",
+        "tickerSymbol",
         "traits",
         "type"
     ]

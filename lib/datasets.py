@@ -1,6 +1,6 @@
 import cv2
 import glob
-from joblib import dump,load
+from joblib import dump, load
 import numpy as np
 import os
 import pandas as pd
@@ -10,17 +10,18 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import MultiLabelBinarizer
 import webcolors
 
-# df = pd.read_csv("../data/combined_browse_info.csv")
+def find_colours(colorway):
+    
+    colours = " ".join(colorway.lower().split("/")).split(" ")
+    unique_colours = list(set([colour_str for colour_str in colours if colour_str in webcolors.CSS3_NAMES_TO_HEX]))
+    return sorted(unique_colours)
 
-# def find_colours(colorway):
+def encode_categorical_features(df, category):
     
-#     colours = " ".join(colorway.lower().split("/")).split(" ")
-    
-#     unique_colours = list(set([colour_str for colour_str in colours if colour_str in webcolors.CSS3_NAMES_TO_HEX]))
-    
-#     return sorted(unique_colours)
-
-# df["uniqueColours"] = df["colorway"].apply(find_colours)
+    encoded = pd.get_dummies(df[category], prefix=category)
+    df = df.join(encoded)
+    df.drop([category], axis=1, inplace=True)
+    return df
 
 # Will also want to parameterise image size for `cvs2.resize`
 def import_images(image_dir, file_extensions):
@@ -48,3 +49,28 @@ def import_images(image_dir, file_extensions):
     images = images / 255.0
 
     return images
+
+df = pd.read_csv("../data/browse_api_product_info.csv")
+
+# Select features
+df = df[["brand", "category", "colorway", "gender", "title", "averageDeadstockPrice", "deadstockSold", "imageUrl", "pricePremium"]]
+
+# Find colours in colorway, add as individual feature coloumns
+df["uniqueColours"] = df["colorway"].apply(find_colours)
+mlb = MultiLabelBinarizer()
+unique_colour_labels = mlb.fit_transform(df['uniqueColours'])
+df = df.join(pd.DataFrame(unique_colour_labels, columns=mlb.classes_))
+df.drop(["uniqueColours"], axis=1, inplace=True)
+
+cols_to_rename = {col: f"colour_{col}" for col in df.columns[9:]}
+df.rename(index=str, columns=cols_to_rename, inplace=True)
+
+for category in ["brand", "category", "gender"]:
+    df = encode_categorical_features(df, category)
+
+# Move target feature to rightmost columns
+cols = list(df.columns.values)
+cols.pop(cols.index("pricePremium"))
+df = df[cols+["pricePremium"]]
+
+df.drop(["colorway", "title", "imageUrl"], axis=1, inplace=True)

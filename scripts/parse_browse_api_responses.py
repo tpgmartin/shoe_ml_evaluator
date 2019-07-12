@@ -10,7 +10,7 @@ from pandas.io.json import json_normalize
 if __name__ == "__main__":
 
     json_files = []
-    for json_file in glob("./data/*.json"):
+    for json_file in glob("./data/json/*.json"):
 
         with open(json_file) as f:
             data = json.load(f)
@@ -54,4 +54,4 @@ if __name__ == "__main__":
         "type"
     ]
     df.drop(cols_to_drop, inplace=True, axis=1)
-    df.to_csv("./data/browse_api_product_info.csv", index=False)
+    df.to_csv("./data/csv/browse_api_product_info.csv", index=False)

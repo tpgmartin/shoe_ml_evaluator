@@ -2,7 +2,7 @@ import os
 import requests
 import pandas as pd
 
-data = pd.read_csv("./data/csv/combined_browse_info.csv")
+data = pd.read_csv("./data/csv/browse_api_product_info.csv")
 
 for idx, row in data.iterrows():
     imageUrl = row["imageUrl"].split("?")[0]

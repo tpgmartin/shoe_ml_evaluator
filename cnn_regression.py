@@ -41,7 +41,7 @@ df_train, df_test, images_train, images_test = train_test_split(df, images, test
 
 # What to predict?
 # * averageDeadstockPrice
-# * deadstockSold
+# * deadstockSold: loss: 36.5430 - val_loss: 56.2292
 # * pricePremium
 y_train = df_train["deadstockSold"]
 y_test = df_test["deadstockSold"]

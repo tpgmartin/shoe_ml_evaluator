@@ -3,6 +3,7 @@
 *.model
 *.pyc
 data
+plots
 __pycache__
 .ipynb_checkpoints
 .DS_Store

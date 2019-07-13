@@ -1,46 +1,50 @@
 import cv2
 import glob
-from joblib import dump,load
+from joblib import dump, load
 from keras.optimizers import Adam
-from lib import models
+from lib import datasets, models
 import numpy as np
 import os
+import pandas as pd
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelBinarizer
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MultiLabelBinarizer
+import webcolors
+
+# Get text data
+df = pd.read_csv(os.path.join(os.getcwd(), "data/csv/browse_api_product_info.csv"))
+
+# Select features
+df = df[["brand", "category", "colorway", "gender", "title", "averageDeadstockPrice", "deadstockSold", "imageUrl", "pricePremium"]]
+
+# Find colours in colorway, add as individual feature coloumns
+df["uniqueColours"] = df["colorway"].apply(datasets.find_colours)
+mlb = MultiLabelBinarizer()
+unique_colour_labels = mlb.fit_transform(df['uniqueColours'])
+df = df.join(pd.DataFrame(unique_colour_labels, columns=mlb.classes_))
+df.drop(["uniqueColours"], axis=1, inplace=True)
+
+cols_to_rename = {col: f"colour_{col}" for col in df.columns[9:]}
+df.rename(index=str, columns=cols_to_rename, inplace=True)
+
+for category in ["brand", "category", "gender"]:
+    df = datasets.encode_categorical_features(df, category)
+
+df.drop(["colorway", "title", "imageUrl"], axis=1, inplace=True)
 
 # Get image files
-image_files = []
-image_files.extend(glob.glob(os.path.join(os.getcwd(), "data", "*.jpg")))
-image_files.extend(glob.glob(os.path.join(os.getcwd(), "data", "*.jpeg")))
+images = datasets.import_images("data/images", ["*.jpg", "*.jpeg"])
 
-image_files_dict = {}
-for f in image_files:
-    f_num = "".join(f.split("/")[-1]).split(".")[0]
-    image_files_dict[int(f_num)] = f
-
-sorted_files = []
-for key, value in sorted(image_files_dict.items()):
-    sorted_files.append(value)
-
-
-images = []
-for filepath in sorted_files:
-    image = cv2.imread(filepath, cv2.IMREAD_UNCHANGED)
-    image = cv2.resize(image, (64, 64))
-    images.append(image)
-
-images = np.array(images)
-images = images / 255.0
-
-df = load("./lib/df.joblib")
 # need to think about imbalances in datasets e.g. brand
 df_train, df_test, images_train, images_test = train_test_split(df, images, test_size=0.3, random_state=42)
 
 # What to predict?
-# * Average price
-# * Total sales
-# * % return
-y_train = df_train["averageDeadstockPrice"]
-y_test = df_test["averageDeadstockPrice"]
+# * averageDeadstockPrice
+# * deadstockSold
+# * pricePremium
+y_train = df_train["deadstockSold"]
+y_test = df_test["deadstockSold"]
 
 model = models.create_cnn(64, 64, 3, regress=True)
 opt = Adam(lr=1e-3, decay=1e-3 / 200)

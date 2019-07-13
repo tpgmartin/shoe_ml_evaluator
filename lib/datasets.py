@@ -49,28 +49,3 @@ def import_images(image_dir, file_extensions):
     images = images / 255.0
 
     return images
-
-df = pd.read_csv("../data/browse_api_product_info.csv")
-
-# Select features
-df = df[["brand", "category", "colorway", "gender", "title", "averageDeadstockPrice", "deadstockSold", "imageUrl", "pricePremium"]]
-
-# Find colours in colorway, add as individual feature coloumns
-df["uniqueColours"] = df["colorway"].apply(find_colours)
-mlb = MultiLabelBinarizer()
-unique_colour_labels = mlb.fit_transform(df['uniqueColours'])
-df = df.join(pd.DataFrame(unique_colour_labels, columns=mlb.classes_))
-df.drop(["uniqueColours"], axis=1, inplace=True)
-
-cols_to_rename = {col: f"colour_{col}" for col in df.columns[9:]}
-df.rename(index=str, columns=cols_to_rename, inplace=True)
-
-for category in ["brand", "category", "gender"]:
-    df = encode_categorical_features(df, category)
-
-# Move target feature to rightmost columns
-cols = list(df.columns.values)
-cols.pop(cols.index("pricePremium"))
-df = df[cols+["pricePremium"]]
-
-df.drop(["colorway", "title", "imageUrl"], axis=1, inplace=True)

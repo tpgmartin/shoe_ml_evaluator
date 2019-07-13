@@ -1,7 +1,9 @@
 import cv2
 import glob
-from joblib import dump, load
+from keras.layers.core import Dense
+from keras.models import Model
 from keras.optimizers import Adam
+from keras.layers import concatenate
 from lib import datasets, models
 import numpy as np
 import os
@@ -29,20 +31,23 @@ for category in ["brand", "category", "gender"]:
     df = datasets.encode_categorical_features(df, category)
 
 # Ignore numeric features "averageDeadstockPrice" and "pricePremium" for time being
-df.drop(["colorway", "title", "imageUrl", "averageDeadstockPrice", "pricePremium"], axis=1, inplace=True)
+df.drop(["colorway", "title", "imageUrl", "averageDeadstockPrice", "deadstockSold"], axis=1, inplace=True)
 
-images = datasets.import_images("data", ["*.jpg", "*.jpeg"])
+images = datasets.import_images("data/images", ["*.jpg", "*.jpeg"])
 
-df_train, df_test, images_train, images_test = train_test_split(df, images, test_size=0.25, random_state=42)
+print(df.shape)
+print(images.shape)
 
-y_train = df_train["deadstockSold"]
-y_test = df_test["deadstockSold"]
+df_train, df_test, images_train, images_test = train_test_split(df, images, test_size=0.3, random_state=42)
 
-df_train.drop(["deadstockSold"], axis=1, inplace=True)
-df_test.drop(["deadstockSold"], axis=1, inplace=True)
+y_train = df_train["pricePremium"]
+y_test = df_test["pricePremium"]
+
+df_train.drop(["pricePremium"], axis=1, inplace=True)
+df_test.drop(["pricePremium"], axis=1, inplace=True)
 
 # Create model
-mlp = models.create_mlp(trainAttrX.shape[1], regress=False)
+mlp = models.create_mlp(df_train.shape[1], regress=False)
 cnn = models.create_cnn(64, 64, 3, regress=False)
  
 combinedInput = concatenate([mlp.output, cnn.output])
@@ -68,7 +73,9 @@ percentDiff = ((preds.flatten() - y_test) / y_test) * 100
 absPercentDiff = np.abs(percentDiff)
 
 # compute the MAPE
-# mean: 46.24%, std: 30.16%
+# * averageDeadstockPrice
+# * deadstockSold: loss: 31.7651 - val_loss: 51.3511, mean: 51.35%, std: 31.64%
+# * pricePremium
 mean = np.mean(absPercentDiff)
 std = np.std(absPercentDiff)
 print("mean: {:.2f}%, std: {:.2f}%".format(mean, std))

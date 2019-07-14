@@ -10,6 +10,19 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import MultiLabelBinarizer
 import webcolors
 
+def find_outliers(df, col):
+
+    lq = df[col].quantile(0.25)
+    uq = df[col].quantile(0.75)
+    iqr = uq - lq
+
+    ub = uq + 1.5*iqr
+    lb = lq - + 1.5*iqr
+
+    outliers = df[(df[col] < lb) | (df[col] > ub)].index.tolist()
+
+    return outliers
+
 def find_colours(colorway):
     
     colours = " ".join(colorway.lower().split("/")).split(" ")
@@ -24,7 +37,7 @@ def encode_categorical_features(df, category):
     return df
 
 # Will also want to parameterise image size for `cvs2.resize`
-def import_images(image_dir, file_extensions):
+def import_images(image_dir, file_extensions, outliers):
 
     image_files = []
     for ext in file_extensions:
@@ -37,7 +50,8 @@ def import_images(image_dir, file_extensions):
 
     sorted_files = []
     for key, value in sorted(image_files_dict.items()):
-        sorted_files.append(value)
+        if str(key) not in outliers:
+            sorted_files.append(value)
 
     images = []
     for filepath in sorted_files:

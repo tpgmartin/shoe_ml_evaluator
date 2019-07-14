@@ -33,7 +33,10 @@ for category in ["brand", "category", "gender"]:
 # Ignore numeric features "averageDeadstockPrice" and "pricePremium" for time being
 df.drop(["colorway", "title", "imageUrl", "averageDeadstockPrice", "deadstockSold"], axis=1, inplace=True)
 
-images = datasets.import_images("data/images", ["*.jpg", "*.jpeg"])
+outliers = datasets.find_outliers(df,"pricePremium")
+
+df.drop(outliers, inplace=True)
+images = datasets.import_images("data/images", ["*.jpg", "*.jpeg"], outliers)
 
 print(df.shape)
 print(images.shape)

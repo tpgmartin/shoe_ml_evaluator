@@ -1,5 +1,4 @@
 import cv2
-import glob
 from keras.layers.core import Dense
 from keras.models import Model
 from keras.optimizers import Adam
@@ -9,14 +8,14 @@ import numpy as np
 import os
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelBinarizer
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import MultiLabelBinarizer
 import webcolors
 
 df = pd.read_csv(os.path.join(os.getcwd(), "data/csv/browse_api_product_info.csv"))
 
-df = df[["brand", "category", "colorway", "gender", "title", "averageDeadstockPrice", "deadstockSold", "imageUrl", "pricePremium"]]
+df = df[["brand", "category", "colorway", "gender", "title", "averageDeadstockPrice", "deadstockSold", "imageUrl", "annualHigh", "lastSale", "pricePremium"]]
+
 # Find colours in colorway, add as individual feature coloumns
 df["uniqueColours"] = df["colorway"].apply(datasets.find_colours)
 mlb = MultiLabelBinarizer()
@@ -24,24 +23,38 @@ unique_colour_labels = mlb.fit_transform(df['uniqueColours'])
 df = df.join(pd.DataFrame(unique_colour_labels, columns=mlb.classes_))
 df.drop(["uniqueColours"], axis=1, inplace=True)
 
-cols_to_rename = {col: f"colour_{col}" for col in df.columns[9:]}
+cols_to_rename = {col: f"colour_{col}" for col in df.columns[11:]}
 df.rename(index=str, columns=cols_to_rename, inplace=True)
 
 for category in ["brand", "category", "gender"]:
     df = datasets.encode_categorical_features(df, category)
 
-# Ignore numeric features "averageDeadstockPrice" and "pricePremium" for time being
-df.drop(["colorway", "title", "imageUrl", "averageDeadstockPrice", "deadstockSold"], axis=1, inplace=True)
+df.drop(["colorway", "title", "imageUrl"], axis=1, inplace=True)
 
 outliers = datasets.find_outliers(df,"pricePremium")
 
 df.drop(outliers, inplace=True)
 images = datasets.import_images("data/images", ["*.jpg", "*.jpeg"], outliers)
 
-print(df.shape)
-print(images.shape)
-
 df_train, df_test, images_train, images_test = train_test_split(df, images, test_size=0.3, random_state=42)
+
+# Normalise numerical values
+scaler = MinMaxScaler()
+# annualHigh
+df_train["annualHigh"] = scaler.fit_transform(df_train[["annualHigh"]])
+df_test["annualHigh"] = scaler.fit_transform(df_test[["annualHigh"]])
+
+# averageDeadstockPrice
+df_train["averageDeadstockPrice"] = scaler.fit_transform(df_train[["averageDeadstockPrice"]])
+df_test["averageDeadstockPrice"] = scaler.fit_transform(df_test[["averageDeadstockPrice"]])
+
+# deadstockSold
+df_train["deadstockSold"] = scaler.fit_transform(df_train[["deadstockSold"]])
+df_test["deadstockSold"] = scaler.fit_transform(df_test[["deadstockSold"]])
+
+# lastSale
+df_train["lastSale"] = scaler.fit_transform(df_train[["lastSale"]])
+df_test["lastSale"] = scaler.fit_transform(df_test[["lastSale"]])
 
 y_train = df_train["pricePremium"]
 y_test = df_test["pricePremium"]

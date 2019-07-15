@@ -21,6 +21,8 @@ if __name__ == "__main__":
     df["pricePremium"] = df["market"].apply(lambda market: market["pricePremium"])
     df["deadstockSold"] = df["market"].apply(lambda market: market["deadstockSold"])
     df["averageDeadstockPrice"] = df["market"].apply(lambda market: market["averageDeadstockPrice"])
+    df["lastSale"] = df["market"].apply(lambda market: market["lastSale"])
+    df["annualHigh"] = df["market"].apply(lambda market: market["annualHigh"])
 
     cols_to_drop = [
         "_tags",
